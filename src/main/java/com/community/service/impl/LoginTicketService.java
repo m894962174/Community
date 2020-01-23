@@ -37,10 +37,10 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
      * @param expiredSeconds
      */
     @Override
-    public Map<String,Object> generateLoginTicket(String username, String password, int expiredSeconds) {
+    public Map<String, Object> generateLoginTicket(String username, String password, int expiredSeconds) {
         Map<String, Object> map = new HashMap<>();
         User user = userService.selectUserByUserName(username);
-        if(user==null){
+        if (user == null) {
             map.put("usernameMsg", "该账号不存在!");
             return map;
         }
@@ -58,7 +58,7 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
             this.baseMapper.insert(loginTicket);
             map.put("ticket", loginTicket.getTicket());
             return map;
-        }else {
+        } else {
             map.put("passwordMsg", "密码不正确!");
             return map;
         }
@@ -66,24 +66,26 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
 
     /**
      * 让登录凭证失效; status:1
+     *
      * @param ticket
      * @return
      */
     @Override
     public void updateLoginTicketStatus(String ticket) {
-        LoginTicket loginTicket=this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket",ticket));
+        LoginTicket loginTicket = this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
         loginTicket.setStatus(1);
-        this.update(loginTicket,new EntityWrapper<LoginTicket>().eq("ticket",ticket));
+        this.update(loginTicket, new EntityWrapper<LoginTicket>().eq("ticket", ticket));
     }
 
     /**
      * 根据ticket获取LT
+     *
      * @param ticket
      * @return
      */
     @Override
     public LoginTicket selectLoginTicketByTicket(String ticket) {
-        return this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket",ticket));
+        return this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
     }
 
 }

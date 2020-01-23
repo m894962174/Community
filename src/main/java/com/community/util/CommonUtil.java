@@ -57,9 +57,10 @@ public class CommonUtil {
 
     /**
      * 将JSONObject的内容打印出来
-     * @param code  状态码
-     * @param msg   信息详情
-     * @param map   额外数据
+     *
+     * @param code 状态码
+     * @param msg  信息详情
+     * @param map  额外数据
      * @return
      */
     public static String getJSONString(int code, String msg, Map<String, Object> map) {

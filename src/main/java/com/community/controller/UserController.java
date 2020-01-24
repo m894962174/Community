@@ -1,8 +1,10 @@
 package com.community.controller;
 
 import com.community.annotation.CheckLogin;
+import com.community.service.impl.LikeService;
 import com.community.service.impl.UserService;
 import com.community.util.CommonUtil;
+import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.User;
 import org.apache.commons.lang3.StringUtils;
@@ -10,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +52,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    LikeService likeService;
 
 
     @CheckLogin
@@ -135,5 +141,23 @@ public class UserController {
         model.addAttribute("errorMsg", map.get("errorMsg"));
         model.addAttribute("checkMsg", map.get("checkMsg"));
         return "/site/setting";
+    }
+
+    /**
+     * to:个人主页
+     * @param userId
+     * @param model
+     * @return
+     */
+    @RequestMapping(value = "/profile/{userId}",method = RequestMethod.GET)
+    public String toUserHomePage(@PathVariable int userId, Model model){
+        User user = userService.selectUserById(userId);
+        if(user==null){
+            throw new RuntimeException("用户不存在！");
+        }
+        int likeCount = likeService.getLikeUserCount(userId);
+        model.addAttribute("user",user);
+        model.addAttribute("likeCount", likeCount);
+        return "/site/profile";
     }
 }

@@ -35,9 +35,9 @@ public class LikeController {
      */
     @RequestMapping(value = "/like", method = RequestMethod.POST)
     @ResponseBody
-    public String like(int entityType, int entityId){
+    public String like(int entityType, int entityId, int entityUserId){
         User user = UserThreadLocal.getUser();
-        likeService.like(user.getId(), entityType, entityId);
+        likeService.like(user.getId(), entityUserId, entityType, entityId);
         Map<String,Object> map=new HashMap();
         map.put("likeStatus", likeService.getLikeStatus(user.getId(), entityType, entityId));
         map.put("likeCount", likeService.getLikeCount(entityType, entityId));

@@ -1,8 +1,10 @@
 package com.community.controller;
 
 import com.community.annotation.CheckLogin;
+import com.community.service.impl.FollowService;
 import com.community.service.impl.LikeService;
 import com.community.service.impl.UserService;
+import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
 import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
@@ -55,6 +57,9 @@ public class UserController {
 
     @Autowired
     LikeService likeService;
+
+    @Autowired
+    FollowService followService;
 
 
     @CheckLogin
@@ -145,19 +150,33 @@ public class UserController {
 
     /**
      * to:个人主页
+     *
      * @param userId
      * @param model
      * @return
      */
-    @RequestMapping(value = "/profile/{userId}",method = RequestMethod.GET)
-    public String toUserHomePage(@PathVariable int userId, Model model){
+    @RequestMapping(value = "/profile/{userId}", method = RequestMethod.GET)
+    public String toUserHomePage(@PathVariable int userId, Model model) {
         User user = userService.selectUserById(userId);
-        if(user==null){
+        if (user == null) {
             throw new RuntimeException("用户不存在！");
         }
         int likeCount = likeService.getLikeUserCount(userId);
-        model.addAttribute("user",user);
+        //当前用户关注总数
+        long followeeCount = followService.getFolloweeCount(userId, CommonStatus.ENTITY_TYPE_USER);
+        //粉丝总数
+        long followerCount = followService.getFollowerCount(CommonStatus.ENTITY_TYPE_USER, userId);
+        //当前用户是否被关注(他人主页时)
+        boolean hasfollow = false;
+        if (UserThreadLocal.getUser() != null){
+            hasfollow = followService.hasFollow(UserThreadLocal.getUser().getId(), CommonStatus.ENTITY_TYPE_USER, userId);
+        }
+        model.addAttribute("hasFollowed", hasfollow);
+        model.addAttribute("followeeCount", followeeCount);
+        model.addAttribute("followerCount", followerCount);
+        model.addAttribute("user", user);
         model.addAttribute("likeCount", likeCount);
+
         return "/site/profile";
     }
 }

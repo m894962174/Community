@@ -3,6 +3,8 @@ package com.community.controller;
 import com.community.service.impl.LoginTicketService;
 import com.community.service.impl.UserService;
 import com.community.util.CommonStatus;
+import com.community.util.CommonUtil;
+import com.community.util.RedisUtil;
 import com.community.vo.User;
 import com.google.code.kaptcha.Producer;
 import org.apache.commons.lang3.StringUtils;
@@ -10,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -26,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 public class LoginController {
@@ -43,6 +47,9 @@ public class LoginController {
 
     @Autowired
     private LoginTicketService loginTicketService;
+
+    @Autowired
+    RedisTemplate<String, Object> template;
 
     /**
      * 跳转注册页面
@@ -114,15 +121,23 @@ public class LoginController {
     }
 
     /**
-     * 后台生成验证码，并存入session
+     * 后台生成验证码，并存入session(已重构：存入redis)
      *
      * @param response
-     * @param session
      */
     @RequestMapping(value = "/kaptcha", method = RequestMethod.GET)
-    public void getKaptcha(HttpServletResponse response, HttpSession session) {
+    public void getKaptcha(HttpServletResponse response/*HttpSession session*/) {
         String text = producer.createText();
-        session.setAttribute("kaptcha", text);
+        //session.setAttribute("kaptcha", text);
+        //生成随机字符串存入cookie标识验证码
+        String kaptchaOwner = CommonUtil.generateUUID();
+        Cookie cookie = new Cookie("kaptchaOwner", kaptchaOwner);
+        cookie.setPath(contextPath);
+        cookie.setMaxAge(60);
+        response.addCookie(cookie);
+        //验证码存入redis
+        String kaptchaKey = RedisUtil.generateKaptchaKey(kaptchaOwner);
+        template.opsForValue().set(kaptchaKey, text, 60, TimeUnit.SECONDS);
         BufferedImage image = producer.createImage(text);
         try {
             OutputStream os = response.getOutputStream();
@@ -134,6 +149,7 @@ public class LoginController {
 
     /**
      * 登录时生成LoginTicket
+     *
      * @param username
      * @param password
      * @param code
@@ -144,17 +160,22 @@ public class LoginController {
      * @return
      */
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    public String login(@Validated String username, String password, String code, boolean rememberme,
+    public String login(@Validated String username, @CookieValue("kaptchaOwner") String kaptchaOwner, String password, String code, boolean rememberme,
                         Model model, HttpSession session, HttpServletResponse response) {
         // 检查验证码
-        String kaptcha = (String) session.getAttribute("kaptcha");
+        //String kaptcha = (String) session.getAttribute("kaptcha");
+        String kaptcha = null;
+        if (kaptchaOwner != null) {
+            String kaptcheKey = RedisUtil.generateKaptchaKey(kaptchaOwner);
+            kaptcha = (String) template.opsForValue().get(kaptcheKey);
+        }
         if (StringUtils.isBlank(kaptcha) || StringUtils.isBlank(code) || !kaptcha.equalsIgnoreCase(code)) {
             model.addAttribute("codeMsg", "验证码不正确!");
             return "/site/login";
         }
         // 检查账号,密码
         int expiredSeconds = rememberme ? CommonStatus.REMEMBER_EXPIRED_SECONDS : CommonStatus.DEFAULT_EXPIRED_SECONDS;
-        Map<String, Object> map = loginTicketService.generateLoginTicket(username,password,expiredSeconds);
+        Map<String, Object> map = loginTicketService.generateLoginTicket(username, password, expiredSeconds);
         if (map.containsKey("ticket")) {
             Cookie cookie = new Cookie("ticket", map.get("ticket").toString());
             cookie.setPath(contextPath);
@@ -169,7 +190,7 @@ public class LoginController {
     }
 
     @RequestMapping(value = "/logout", method = RequestMethod.GET)
-    public String logout(@CookieValue String ticket){
+    public String logout(@CookieValue String ticket) {
         loginTicketService.updateLoginTicketStatus(ticket);
         return "redirect:/login";
     }

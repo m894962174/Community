@@ -4,14 +4,12 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.community.mapper.UserMapper;
 import com.community.service.IUserService;
-import com.community.util.CommonStatus;
-import com.community.util.CommonUtil;
-import com.community.util.MailClient;
-import com.community.util.UserThreadLocal;
+import com.community.util.*;
 import com.community.vo.LoginTicket;
 import com.community.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -21,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -41,6 +40,9 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    @Autowired
+    RedisTemplate<String, Object> template;
+
 
     /**
      * 查询User
@@ -50,7 +52,11 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
      */
     @Override
     public User selectUserById(int id) {
-        return this.baseMapper.selectById(id);
+        User user = this.getRedisUser(id);
+        if(user==null) {
+            user = this.initRedisUser(id);
+        }
+        return user;
     }
 
 
@@ -118,6 +124,7 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
             } else if (user.getActivationCode().equals(activtionCode)) {
                 user.setStatus(1);
                 this.updateById(user);
+                this.clearRedisUser(userId);
                 return CommonStatus.ACTIVATION_SUCCESS;
             } else {
                 return CommonStatus.ACTIVATION_FAILURE;
@@ -134,7 +141,7 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
     @Override
     public User selectUserByParam(String param) {
         LoginTicket loginTicket = loginTicketService.selectLoginTicketByTicket(param);
-        return this.baseMapper.selectById(loginTicket.getUserId());
+        return this.selectUserById(loginTicket.getUserId());
     }
 
     /**
@@ -145,6 +152,7 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
     @Override
     public void updateUserHeaderUrl(User user) {
         this.updateById(user);
+        this.clearRedisUser(user.getId());
     }
 
     /**
@@ -172,8 +180,37 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
         }
         user.setPassword(CommonUtil.md5(passWord + user.getSalt()));
         this.updateById(user);
+        this.clearRedisUser(user.getId());
         return null;
     }
 
+    /**
+     * 优先从redis缓存中取值
+     * @param userId
+     * @return
+     */
+    private User getRedisUser(int userId){
+        String userKey = RedisUtil.generateUserKey(userId);
+        return (User) template.opsForValue().get(userKey);
+    }
 
+    /**
+     * 取不到时，初始化redis缓存
+     * @param userId
+     */
+    private User initRedisUser(int userId){
+        String userKey = RedisUtil.generateUserKey(userId);
+        User user = this.selectById(userId);
+        template.opsForValue().set(userKey, user, 3600, TimeUnit.SECONDS);
+        return user;
+    }
+
+    /**
+     * 对User有修改行为时，清除redis缓存
+     * @param userId
+     */
+    private void clearRedisUser(int userId){
+        String userKey = RedisUtil.generateUserKey(userId);
+        template.delete(userKey);
+    }
 }

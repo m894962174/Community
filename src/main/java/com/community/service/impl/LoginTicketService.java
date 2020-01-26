@@ -1,13 +1,14 @@
 package com.community.service.impl;
 
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.community.mapper.LoginTicketMapper;
 import com.community.service.ILoginTicketService;
 import com.community.util.CommonUtil;
+import com.community.util.RedisUtil;
 import com.community.vo.LoginTicket;
 import com.community.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -16,7 +17,8 @@ import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
- *
+ *  ps:重构于2020/01/26/11.06
+ *  LoginTicket 存于redis
  * @Auther: majhp
  * @Date: 2020/01/14/17:04
  * @Description:
@@ -28,6 +30,8 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
     @Autowired
     UserService userService;
 
+    @Autowired
+    RedisTemplate<String, Object> template;
 
     /**
      * 生成登录凭证
@@ -55,7 +59,9 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
             loginTicket.setTicket(CommonUtil.generateUUID());
             loginTicket.setStatus(0);
             loginTicket.setExpired(new Date(System.currentTimeMillis() + expiredSeconds * 1000));
-            this.baseMapper.insert(loginTicket);
+            //this.baseMapper.insert(loginTicket);
+            String key = RedisUtil.generateLoginTicket(loginTicket.getTicket());
+            template.opsForValue().set(key, loginTicket);
             map.put("ticket", loginTicket.getTicket());
             return map;
         } else {
@@ -72,9 +78,13 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
      */
     @Override
     public void updateLoginTicketStatus(String ticket) {
-        LoginTicket loginTicket = this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+//        LoginTicket loginTicket = this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+//        loginTicket.setStatus(1);
+//        this.update(loginTicket, new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+        String key = RedisUtil.generateLoginTicket(ticket);
+        LoginTicket loginTicket = (LoginTicket) template.opsForValue().get(key);
         loginTicket.setStatus(1);
-        this.update(loginTicket, new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+        template.opsForValue().set(key,loginTicket);
     }
 
     /**
@@ -85,7 +95,9 @@ public class LoginTicketService extends ServiceImpl<LoginTicketMapper, LoginTick
      */
     @Override
     public LoginTicket selectLoginTicketByTicket(String ticket) {
-        return this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+//        return this.selectOne(new EntityWrapper<LoginTicket>().eq("ticket", ticket));
+        String key = RedisUtil.generateLoginTicket(ticket);
+        return (LoginTicket) template.opsForValue().get(key);
     }
 
 }

@@ -99,7 +99,7 @@ public class UserController {
         //更改User的headUrl
         User user = UserThreadLocal.getUser();
         user.setHeaderUrl(domain + contextPath + "/user/header/" + fileName);
-        userService.updateById(user);
+        userService.updateUserHeaderUrl(user);
         return "redirect:/index";
     }
 

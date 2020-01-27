@@ -81,4 +81,14 @@ public class CommentService extends ServiceImpl<CommentMapper, Comment> implemen
             discussPostMapper.updateCommentCount(count, comment.getEntityId());
         }
     }
+
+    /**
+     * 根据Id获取comment实体
+     * @param id
+     * @return
+     */
+    @Override
+    public Comment selectCommentById(int id) {
+        return this.selectById(id);
+    }
 }

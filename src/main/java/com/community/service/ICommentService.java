@@ -37,4 +37,11 @@ public interface ICommentService extends IService<Comment> {
      * @param comment
      */
     void  insertComment(Comment comment);
+
+    /**
+     * id 查询
+     * @param id
+     * @return
+     */
+    Comment selectCommentById(int id);
 }

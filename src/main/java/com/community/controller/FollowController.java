@@ -1,10 +1,12 @@
 package com.community.controller;
 
+import com.community.event.EventProducer;
 import com.community.service.impl.FollowService;
 import com.community.service.impl.UserService;
 import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
 import com.community.util.UserThreadLocal;
+import com.community.vo.Event;
 import com.community.vo.Page;
 import com.community.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,11 +36,25 @@ public class FollowController {
     @Autowired
     UserService userService;
 
+    @Autowired
+    EventProducer eventProducer;
+
+
+
     @RequestMapping(value = "/follow", method = RequestMethod.POST)
     @ResponseBody
 //    @CheckLogin
     public String follow(int entityType, int entityId) {
         followService.follow(UserThreadLocal.getUser().getId(), entityType, entityId);
+        //触发事件
+        Event event = new Event()
+                .setTopic(CommonStatus.TOPIC_FOLLOW)
+                .setEntityType(entityType)
+                .setEntityId(entityId)
+                .setUserId(UserThreadLocal.getUser().getId())
+                .setEntityUserId(entityId);
+        eventProducer.dealEvent(event);
+
         return CommonUtil.getJSONString(0, "已关注!");
     }
 

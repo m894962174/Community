@@ -97,6 +97,14 @@ public class MessageService extends ServiceImpl<MessageMapper, Message> implemen
     }
 
     /**
+     * 事件消息添加，不做html与敏感词的过滤
+     * @param message
+     */
+    public void insertMessageForEvent(Message message){
+        this.insert(message);
+    }
+
+    /**
      * 更改私信（已读/未读）状态
      * @param ids
      * @param status

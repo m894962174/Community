@@ -1,8 +1,12 @@
 package com.community.controller;
 
+import com.community.event.EventProducer;
 import com.community.service.ICommentService;
+import com.community.service.impl.DiscussPostService;
+import com.community.util.CommonStatus;
 import com.community.util.UserThreadLocal;
 import com.community.vo.Comment;
+import com.community.vo.Event;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +29,11 @@ public class CommentController {
     @Autowired
     ICommentService commentService;
 
+    @Autowired
+    DiscussPostService discussPostService;
+
+    @Autowired
+    EventProducer producer;
 
 
     /**
@@ -40,6 +49,20 @@ public class CommentController {
         comment.setUserId(UserThreadLocal.getUser().getId());
         comment.setStatus(0);
         commentService.insertComment(comment);
+
+        Event event = new Event()
+                .setUserId(UserThreadLocal.getUser().getId())
+                .setTopic(CommonStatus.TOPIC_COMMENT)
+                .setEntityType(comment.getEntityType())
+                .setEntityId(comment.getEntityId())
+                .setData("postId", discussPostId);
+
+        if(comment.getEntityType() == CommonStatus.ENTITY_TYPE_POST) {
+            event.setEntityUserId(discussPostService.selectDisCussPostById(comment.getEntityId()).getUserId());
+        }else if(comment.getEntityType() == CommonStatus.ENTITY_TYPE_COMMENT) {
+            event.setEntityUserId(commentService.selectCommentById(comment.getEntityId()).getUserId());
+        }
+        producer.dealEvent(event);
         return "redirect:/detail/" + discussPostId;
     }
 }

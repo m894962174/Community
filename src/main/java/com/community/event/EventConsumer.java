@@ -66,6 +66,6 @@ public class EventConsumer {
             }
         }
         message.setContent(JSONObject.toJSONString(content));
-        messageService.insertMessageForEvent(message);
+        messageService.insertMessage(message);
     }
 }

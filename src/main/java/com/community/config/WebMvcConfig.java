@@ -2,6 +2,7 @@ package com.community.config;
 
 import com.community.controller.interceptor.CheckLoginInterceptor;
 import com.community.controller.interceptor.LoginTicketInterceptor;
+import com.community.controller.interceptor.MessageCountInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -23,11 +24,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Autowired
     private CheckLoginInterceptor checkLoginInterceptor;
 
+    @Autowired
+    private MessageCountInterceptor messageCountInterceptor;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loginTicketInterceptor)
                 .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
         registry.addInterceptor(checkLoginInterceptor)
+                .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
+        registry.addInterceptor(messageCountInterceptor)
                 .excludePathPatterns("/**/*.css", "/**/*.js", "/**/*.png", "/**/*.jpg", "/**/*.jpeg");
     }
 }

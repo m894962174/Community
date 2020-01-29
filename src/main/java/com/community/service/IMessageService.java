@@ -32,4 +32,5 @@ public interface IMessageService extends IService<Message> {
      * @param message
      */
     void insertMessage(Message message);
+
 }

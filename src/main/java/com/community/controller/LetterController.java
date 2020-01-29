@@ -1,7 +1,9 @@
 package com.community.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.community.service.IUserService;
 import com.community.service.impl.MessageService;
+import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.Message;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.*;
 
@@ -26,7 +29,7 @@ import java.util.*;
  */
 @Controller
 @RequestMapping("/letter")
-public class MessageController {
+public class LetterController {
 
     //此处不用IMessageService接口接收，通常用接口接收是考虑到可能会有对于接口的多种实现，体现了程序的可扩展性，
     // 此工程可能不太会有这种情形，因此以后都采用Impl接收的方式，便于mybatis-plus2.0的使用
@@ -68,6 +71,8 @@ public class MessageController {
         // 查询未读消息数量
         int letterUnreadCount = messageService.selectLetterUnreadCount(user.getId(), null);
         model.addAttribute("letterUnreadCount", letterUnreadCount);
+        int noticeUnreadCount = messageService.selectNoticUnReadCount(user.getId(), null);
+        model.addAttribute("noticeUnreadCount", noticeUnreadCount);
         return "/site/letter";
     }
 
@@ -154,4 +159,6 @@ public class MessageController {
             return userService.selectUserById(id0);
         }
     }
+
+
 }

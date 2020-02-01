@@ -1,8 +1,11 @@
 package com.community.event;
 
 import com.alibaba.fastjson.JSONObject;
+import com.community.service.impl.DiscussPostService;
+import com.community.service.impl.ElasticSearchService;
 import com.community.service.impl.MessageService;
 import com.community.util.CommonStatus;
+import com.community.vo.DiscussPost;
 import com.community.vo.Event;
 import com.community.vo.Message;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -30,6 +33,13 @@ public class EventConsumer {
 
     @Autowired
     MessageService messageService;
+
+    @Autowired
+    DiscussPostService discussPostService;
+
+    @Autowired
+    ElasticSearchService elasticSearchService;
+
 
 
     /**
@@ -67,5 +77,25 @@ public class EventConsumer {
         }
         message.setContent(JSONObject.toJSONString(content));
         messageService.insertMessage(message);
+    }
+
+    /**
+     * 处理发帖事件
+     * @param record
+     */
+    @KafkaListener(topics = CommonStatus.TOPIC_PUBLISH)
+    public void  dealPublishPost(ConsumerRecord record){
+        if(record == null || record.value() == null) {
+            logger.error("生成消息为空！");
+            return;
+        }
+
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            logger.error("生成消息格式错误");
+            return;
+        }
+        DiscussPost discussPost = discussPostService.selectDisCussPostById(event.getEntityId());
+        elasticSearchService.insert(discussPost);
     }
 }

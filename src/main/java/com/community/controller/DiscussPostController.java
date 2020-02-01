@@ -1,6 +1,7 @@
 package com.community.controller;
 
 import com.community.annotation.CheckLogin;
+import com.community.event.EventProducer;
 import com.community.service.ICommentService;
 import com.community.service.IDiscussPostService;
 import com.community.service.IUserService;
@@ -8,10 +9,7 @@ import com.community.service.impl.LikeService;
 import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
 import com.community.util.UserThreadLocal;
-import com.community.vo.Comment;
-import com.community.vo.DiscussPost;
-import com.community.vo.Page;
-import com.community.vo.User;
+import com.community.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,6 +35,9 @@ public class DiscussPostController {
 
     @Autowired
     LikeService likeService;
+
+    @Autowired
+    EventProducer eventProducer;
 
 
     @RequestMapping(path = "/index", method = RequestMethod.GET)
@@ -87,6 +88,15 @@ public class DiscussPostController {
         post.setType(0);
         post.setCommentCount(0);
         discussPostService.add(post);
+
+        //生成事件
+        Event event = new Event();
+        event.setTopic(CommonStatus.TOPIC_PUBLISH)
+            .setUserId(user.getId())
+            .setEntityType(CommonStatus.ENTITY_TYPE_POST)
+            .setEntityId(post.getId());
+        eventProducer.dealEvent(event);
+
         return CommonUtil.getJSONString(0, "发布成功!");
     }
 

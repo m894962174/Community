@@ -8,7 +8,6 @@ import com.community.util.UserThreadLocal;
 import com.community.vo.Message;
 import com.community.vo.Page;
 import com.community.vo.User;
-import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -51,8 +50,8 @@ public class NoticeController {
         User user = UserThreadLocal.getUser();
         //评论事件
         Message message = messageService.selectNewNotice(user.getId(), CommonStatus.TOPIC_COMMENT);
-        Map<String, Object> messageVo = new HashMap<>();
         if (message != null) {
+            Map<String, Object> messageVo = new HashMap<>();
             messageVo.put("message", message);
             //处理content，便于获取事件信息
             String content = HtmlUtils.htmlUnescape(message.getContent());
@@ -65,12 +64,12 @@ public class NoticeController {
             messageVo.put("count", count);
             count = messageService.selectNoticUnReadCount(user.getId(), CommonStatus.TOPIC_COMMENT);
             messageVo.put("unread", count);
+            model.addAttribute("commentNotice", messageVo);
         }
-        model.addAttribute("commentNotice", messageVo);
         //点赞事件
         message = messageService.selectNewNotice(user.getId(), CommonStatus.TOPIC_LIKE);
-        messageVo = new HashMap<>();
         if (message != null) {
+            Map<String, Object> messageVo = new HashMap<>();
             messageVo.put("message", message);
             //处理content，便于获取事件信息
             String content = HtmlUtils.htmlUnescape(message.getContent());
@@ -83,12 +82,13 @@ public class NoticeController {
             messageVo.put("count", count);
             count = messageService.selectNoticUnReadCount(user.getId(), CommonStatus.TOPIC_LIKE);
             messageVo.put("unread", count);
+            model.addAttribute("likeNotice", messageVo);
         }
-        model.addAttribute("likeNotice", messageVo);
+
         //关注事件
         message = messageService.selectNewNotice(user.getId(), CommonStatus.TOPIC_FOLLOW);
-        messageVo = new HashMap<>();
         if (message != null) {
+            Map<String, Object> messageVo = new HashMap<>();
             messageVo.put("message", message);
             //处理content，便于获取事件信息
             String content = HtmlUtils.htmlUnescape(message.getContent());
@@ -100,8 +100,8 @@ public class NoticeController {
             messageVo.put("count", count);
             count = messageService.selectNoticUnReadCount(user.getId(), CommonStatus.TOPIC_FOLLOW);
             messageVo.put("unread", count);
+            model.addAttribute("followNotice", messageVo);
         }
-        model.addAttribute("followNotice", messageVo);
 
         // 查询未读消息数量
         int letterUnreadCount = messageService.selectLetterUnreadCount(user.getId(), null);

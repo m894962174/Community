@@ -189,4 +189,12 @@ public class DiscussPostController {
         return "/error/500";
     }
 
+    /**
+     * securityConfig中，权限不够时跳转的页面
+     * @return
+     */
+    @RequestMapping(path = "/denied", method = RequestMethod.GET)
+    public String getDeniedPage() {
+        return "/error/404";
+    }
 }

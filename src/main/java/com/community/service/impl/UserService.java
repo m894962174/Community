@@ -10,15 +10,13 @@ import com.community.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 
@@ -53,7 +51,7 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
     @Override
     public User selectUserById(int id) {
         User user = this.getRedisUser(id);
-        if(user==null) {
+        if (user == null) {
             user = this.initRedisUser(id);
         }
         return user;
@@ -186,19 +184,21 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
 
     /**
      * 优先从redis缓存中取值
+     *
      * @param userId
      * @return
      */
-    private User getRedisUser(int userId){
+    private User getRedisUser(int userId) {
         String userKey = RedisUtil.generateUserKey(userId);
         return (User) template.opsForValue().get(userKey);
     }
 
     /**
      * 取不到时，初始化redis缓存
+     *
      * @param userId
      */
-    private User initRedisUser(int userId){
+    private User initRedisUser(int userId) {
         String userKey = RedisUtil.generateUserKey(userId);
         User user = this.selectById(userId);
         template.opsForValue().set(userKey, user, 3600, TimeUnit.SECONDS);
@@ -207,10 +207,36 @@ public class UserService extends ServiceImpl<UserMapper, User> implements IUserS
 
     /**
      * 对User有修改行为时，清除redis缓存
+     *
      * @param userId
      */
-    private void clearRedisUser(int userId){
+    private void clearRedisUser(int userId) {
         String userKey = RedisUtil.generateUserKey(userId);
         template.delete(userKey);
+    }
+
+    /**
+     * 获取用户凭证等级，供security获取
+     *
+     * @param userId
+     * @return
+     */
+    public Collection<? extends GrantedAuthority> getAuthorities(int userId) {
+        User user = this.selectUserById(userId);
+        List<GrantedAuthority> list = new ArrayList<>();
+        list.add(new GrantedAuthority() {
+            @Override
+            public String getAuthority() {
+                switch (user.getType()) {
+                    case 1:
+                        return CommonStatus.AUTHORITY_ADMIN;
+                    case 2:
+                        return CommonStatus.AUTHORITY_MODERATOR;
+                    default:
+                        return CommonStatus.AUTHORITY_USER;
+                }
+            }
+        });
+        return list;
     }
 }

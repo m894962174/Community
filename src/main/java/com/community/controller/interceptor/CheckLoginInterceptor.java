@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
  * @Description:
  */
 @Component
+@Deprecated
 public class CheckLoginInterceptor implements HandlerInterceptor {
 
     @Override

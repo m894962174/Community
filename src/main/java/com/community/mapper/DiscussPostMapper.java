@@ -22,4 +22,9 @@ public interface DiscussPostMapper extends BaseMapper<DiscussPost> {
      * @param id
      */
     void updateCommentCount(int commentCount, int id);
+
+    int updateType(int id, int type);
+
+    int updateStatus(int id, int status);
+
 }

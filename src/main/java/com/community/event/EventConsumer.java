@@ -98,4 +98,23 @@ public class EventConsumer {
         DiscussPost discussPost = discussPostService.selectDisCussPostById(event.getEntityId());
         elasticSearchService.insert(discussPost);
     }
+
+    /**
+     * 处理删帖事件
+     * @param record
+     */
+    @KafkaListener(topics = CommonStatus.TOPIC_DELETE)
+    public void  dealDeletePost(ConsumerRecord record){
+        if(record == null || record.value() == null) {
+            logger.error("生成消息为空！");
+            return;
+        }
+
+        Event event = JSONObject.parseObject(record.value().toString(), Event.class);
+        if (event == null) {
+            logger.error("生成消息格式错误");
+            return;
+        }
+        elasticSearchService.delete(event.getEntityId());
+    }
 }

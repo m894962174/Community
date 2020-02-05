@@ -82,4 +82,12 @@ public class DiscussPostService extends ServiceImpl<DiscussPostMapper, DiscussPo
     public void update(int commentCount, int id) {
         this.baseMapper.updateCommentCount(commentCount, id);
     }
+
+    public int updateType(int id, int type){
+        return this.baseMapper.updateType(id, type);
+    }
+
+    public int updateStatus(int id, int status){
+        return this.baseMapper.updateStatus(id, status);
+    }
 }

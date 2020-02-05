@@ -3,8 +3,8 @@ package com.community.controller;
 import com.community.annotation.CheckLogin;
 import com.community.event.EventProducer;
 import com.community.service.ICommentService;
-import com.community.service.IDiscussPostService;
 import com.community.service.IUserService;
+import com.community.service.impl.DiscussPostService;
 import com.community.service.impl.LikeService;
 import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
@@ -25,7 +25,7 @@ import java.util.*;
 public class DiscussPostController {
 
     @Autowired
-    IDiscussPostService discussPostService;
+    DiscussPostService discussPostService;
 
     @Autowired
     IUserService userService;
@@ -177,6 +177,68 @@ public class DiscussPostController {
             model.addAttribute("comments", commentLists);
         }
         return "/site/discuss-detail";
+    }
+
+    /**
+     * 帖子置顶
+     * @param id
+     * @return
+     */
+    @RequestMapping(value = "/discuss/top", method = RequestMethod.POST)
+    @ResponseBody
+    public String setTop(int id){
+        discussPostService.updateType(id, 1);
+        //产生事件
+        Event event = new Event()
+                .setUserId(UserThreadLocal.getUser().getId())
+                .setTopic(CommonStatus.TOPIC_PUBLISH)
+                .setEntityType(CommonStatus.ENTITY_TYPE_POST)
+                .setEntityId(id);
+
+        eventProducer.dealEvent(event);
+        return CommonUtil.getJSONString(0);
+    }
+
+    /**
+     * 帖子加精
+     * @param id
+     * @return
+     */
+    @RequestMapping(value = "/discuss/wonderful", method = RequestMethod.POST)
+    @ResponseBody
+    public String setWonderful(int id ){
+        discussPostService.updateStatus(id, 1);
+
+        //产生事件
+        Event event = new Event()
+                .setUserId(UserThreadLocal.getUser().getId())
+                .setTopic(CommonStatus.TOPIC_PUBLISH)
+                .setEntityType(CommonStatus.ENTITY_TYPE_POST)
+                .setEntityId(id);
+
+        eventProducer.dealEvent(event);
+        return CommonUtil.getJSONString(0);
+    }
+
+    /**
+     * 删除帖子
+     * @param id
+     * @return
+     */
+    @RequestMapping("/discuss/delete")
+    @ResponseBody
+    public String deletePost(int id){
+        discussPostService.updateStatus(id, 2);
+
+        //产生事件
+        Event event = new Event()
+                .setUserId(UserThreadLocal.getUser().getId())
+                .setTopic(CommonStatus.TOPIC_DELETE)
+                .setEntityType(CommonStatus.ENTITY_TYPE_POST)
+                .setEntityId(id);
+
+        eventProducer.dealEvent(event);
+        return CommonUtil.getJSONString(0);
     }
 
     /**

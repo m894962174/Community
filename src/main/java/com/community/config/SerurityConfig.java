@@ -24,8 +24,7 @@ import java.io.IOException;
  * @Description:
  */
 @Configuration
-public class SerurityConfig extends WebSecurityConfigurerAdapter{
-
+public class SerurityConfig extends WebSecurityConfigurerAdapter {
 
 
     //配置不需要过滤的路径
@@ -56,6 +55,19 @@ public class SerurityConfig extends WebSecurityConfigurerAdapter{
                         CommonStatus.AUTHORITY_MODERATOR,
                         CommonStatus.AUTHORITY_USER
                 )
+                .antMatchers(
+                        "/discuss/top",
+                        "/discuss/wonderful"
+                ).hasAnyAuthority(
+                        CommonStatus.AUTHORITY_MODERATOR
+                )
+                .antMatchers(
+                        "/discuss/delete"
+                )
+                .hasAnyAuthority(
+                        CommonStatus.AUTHORITY_ADMIN,
+                        CommonStatus.AUTHORITY_MODERATOR
+                )
                 //除以上路径外，不需授权，放行
                 .anyRequest().permitAll()
                 //暂时关闭生成csrf凭证
@@ -71,7 +83,7 @@ public class SerurityConfig extends WebSecurityConfigurerAdapter{
                         if ("XMLHttpRequest".equals(xRequestedWith)) {
                             response.setContentType("application/plain;charset=utf-8");
                             response.getWriter().write(CommonUtil.getJSONString(403, "您还未登录！"));
-                        }else {
+                        } else {
                             response.sendRedirect(request.getContextPath() + "/login");
                         }
                     }
@@ -85,7 +97,7 @@ public class SerurityConfig extends WebSecurityConfigurerAdapter{
                         if ("XMLHttpRequest".equals(xRequestedWith)) {
                             response.setContentType("application/plain;charset=utf-8");
                             response.getWriter().write(CommonUtil.getJSONString(403, "权限不足！"));
-                        }else {
+                        } else {
                             response.sendRedirect(request.getContextPath() + "/denied");
                         }
                     }

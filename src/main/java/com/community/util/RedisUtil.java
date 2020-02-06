@@ -17,6 +17,8 @@ public class RedisUtil {
     private static final String PREFIX_KAPTCHA = "kaptcha";
     private static final String PREFIX_LOGINTICKET = "loginticket";
     private static final String PREFIX_USER = "user";
+    private static final String PREFIX_UV = "uv";
+    private static final String PREFIX_DAU = "dau";
 
     /**
      * 某个实体的赞
@@ -71,5 +73,21 @@ public class RedisUtil {
 
     public static String generateUserKey(int userId){
         return  PREFIX_USER + connectorWord + userId;
+    }
+
+    public static String generateUVKey(String date){
+        return PREFIX_UV + connectorWord + date;
+    }
+
+    public static String generateUVKey(String start, String end){
+        return PREFIX_UV + connectorWord + start + connectorWord + end;
+    }
+
+    public static String generateDAUKey(String date){
+        return  PREFIX_DAU + connectorWord + date;
+    }
+
+    public static String gengerateDAUKey(String start, String end){
+        return  PREFIX_DAU + connectorWord + start + connectorWord + end;
     }
 }

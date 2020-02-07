@@ -10,15 +10,17 @@ public interface IDiscussPostService extends IService<DiscussPost> {
 
     /**
      * 社区首页帖子展示
+     *
      * @param userId
      * @param offset
      * @param limit
      * @return
      */
-    List<DiscussPost> listDiscussPosts(int userId, int offset, int limit);
+    List<DiscussPost> listDiscussPosts(int userId, int offset, int limit, int orderMode);
 
     /**
      * 统计帖子总数
+     *
      * @param userId
      * @return
      */
@@ -26,12 +28,14 @@ public interface IDiscussPostService extends IService<DiscussPost> {
 
     /**
      * 添加帖子
+     *
      * @param discussPost
      */
     void add(DiscussPost discussPost);
 
     /**
      * 根据Id查询DiscussPost
+     *
      * @param discussPostId
      * @return
      */
@@ -39,6 +43,7 @@ public interface IDiscussPostService extends IService<DiscussPost> {
 
     /**
      * 修改commentCount
+     *
      * @param commentCount
      * @param id
      */

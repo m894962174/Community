@@ -19,6 +19,7 @@ public class RedisUtil {
     private static final String PREFIX_USER = "user";
     private static final String PREFIX_UV = "uv";
     private static final String PREFIX_DAU = "dau";
+    private static final String PREFIX_POSTSCORE = "post:score";
 
     /**
      * 某个实体的赞
@@ -89,5 +90,9 @@ public class RedisUtil {
 
     public static String gengerateDAUKey(String start, String end){
         return  PREFIX_DAU + connectorWord + start + connectorWord + end;
+    }
+
+    public static String getPostScoreKey(){
+        return PREFIX_POSTSCORE ;
     }
 }

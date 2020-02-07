@@ -4,10 +4,12 @@ import com.community.event.EventProducer;
 import com.community.service.ICommentService;
 import com.community.service.impl.DiscussPostService;
 import com.community.util.CommonStatus;
+import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.Comment;
 import com.community.vo.Event;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +37,9 @@ public class CommentController {
     @Autowired
     EventProducer producer;
 
+    @Autowired
+    RedisTemplate redisTemplate;
+
 
     /**
      * 新增评论
@@ -56,6 +61,10 @@ public class CommentController {
                 .setEntityType(comment.getEntityType())
                 .setEntityId(comment.getEntityId())
                 .setData("postId", discussPostId);
+
+        //重新计算帖子分数
+        String scoreKey = RedisUtil.getPostScoreKey();
+        redisTemplate.opsForSet().add(scoreKey, discussPostId);
 
         if(comment.getEntityType() == CommonStatus.ENTITY_TYPE_POST) {
             event.setEntityUserId(discussPostService.selectDisCussPostById(comment.getEntityId()).getUserId());

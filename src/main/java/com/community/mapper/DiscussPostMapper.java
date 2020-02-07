@@ -14,7 +14,7 @@ public interface DiscussPostMapper extends BaseMapper<DiscussPost> {
      * @param limit
      * @return
      */
-    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
+    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit, int orderMode);
 
     /**
      * 修改commentCount
@@ -27,4 +27,5 @@ public interface DiscussPostMapper extends BaseMapper<DiscussPost> {
 
     int updateStatus(int id, int status);
 
+    int updateScore(int id, double score);
 }

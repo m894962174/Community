@@ -8,15 +8,14 @@ import com.community.service.impl.DiscussPostService;
 import com.community.service.impl.LikeService;
 import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
+import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
@@ -39,14 +38,17 @@ public class DiscussPostController {
     @Autowired
     EventProducer eventProducer;
 
+    @Autowired
+    RedisTemplate redisTemplate;
+
 
     @RequestMapping(path = "/index", method = RequestMethod.GET)
-    public String getIndexPage(Model model, Page page) {
+    public String getIndexPage(Model model, Page page, @RequestParam(defaultValue = "0") int orderMode) {
         // 方法调用栈,SpringMVC会自动实例化Model和Page,并将Page注入Model.
         // 所以,在thymeleaf中可以直接访问Page对象中的数据.
         page.setRows(discussPostService.getCount(0));
-        page.setPath("/index");
-        List<DiscussPost> list = discussPostService.listDiscussPosts(0, page.getOffset(), page.getLimit());
+        page.setPath("/index?orderMode=" + orderMode);
+        List<DiscussPost> list = discussPostService.listDiscussPosts(0, page.getOffset(), page.getLimit(), orderMode);
         List<Map<String, Object>> discussPosts = new ArrayList<>();
         if (list != null) {
             for (DiscussPost post : list) {
@@ -61,6 +63,7 @@ public class DiscussPostController {
             }
         }
         model.addAttribute("discussPosts", discussPosts);
+        model.addAttribute("orderMode", orderMode);
         return "/index";
     }
 
@@ -217,6 +220,11 @@ public class DiscussPostController {
                 .setEntityId(id);
 
         eventProducer.dealEvent(event);
+
+        //重新计算帖子分数
+        String scoreKey = RedisUtil.getPostScoreKey();
+        redisTemplate.opsForSet().add(scoreKey, id);
+
         return CommonUtil.getJSONString(0);
     }
 

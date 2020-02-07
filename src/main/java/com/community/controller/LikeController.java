@@ -4,10 +4,12 @@ import com.community.event.EventProducer;
 import com.community.service.impl.LikeService;
 import com.community.util.CommonStatus;
 import com.community.util.CommonUtil;
+import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.Event;
 import com.community.vo.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -31,6 +33,9 @@ public class LikeController {
 
     @Autowired
     EventProducer eventProducer;
+
+    @Autowired
+    RedisTemplate redisTemplate;
 
 
     /**
@@ -59,6 +64,12 @@ public class LikeController {
                     .setEntityUserId(entityUserId)
                     .setData("postId", postId);
             eventProducer.dealEvent(event);
+        }
+
+        if(entityType == CommonStatus.ENTITY_TYPE_POST) {
+            //重新计算帖子分数
+            String scoreKey = RedisUtil.getPostScoreKey();
+            redisTemplate.opsForSet().add(scoreKey, postId);
         }
         return CommonUtil.getJSONString(0,null,map);
     }

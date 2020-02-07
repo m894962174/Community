@@ -18,39 +18,42 @@ import java.util.List;
 @Service
 public class DiscussPostService extends ServiceImpl<DiscussPostMapper, DiscussPost> implements IDiscussPostService {
 
-    private static final Logger log= LoggerFactory.getLogger(DiscussPostService.class);
+    private static final Logger log = LoggerFactory.getLogger(DiscussPostService.class);
 
     @Autowired
     SensitiveWordFilter sensitiveWordFilter;
 
     /**
      * 社区首页帖子展示
+     *
      * @param userId
      * @param offset
      * @param limit
      * @return
      */
     @Override
-    public List<DiscussPost> listDiscussPosts(int userId, int offset, int limit) {
-        return this.baseMapper.selectDiscussPosts(userId,offset,limit);
+    public List<DiscussPost> listDiscussPosts(int userId, int offset, int limit, int orderMode) {
+        return this.baseMapper.selectDiscussPosts(userId, offset, limit, orderMode);
     }
 
 
     /**
      * 获取未被拉黑的帖子数
+     *
      * @param userId
      * @return
      */
-    public int getCount(int userId){
-        if(userId==0){
-            return this.baseMapper.selectCount(new EntityWrapper<DiscussPost>().ne("status",2));
-        }else{
-            return this.baseMapper.selectCount(new EntityWrapper<DiscussPost>().eq("user_id",userId).ne("status",2));
+    public int getCount(int userId) {
+        if (userId == 0) {
+            return this.baseMapper.selectCount(new EntityWrapper<DiscussPost>().ne("status", 2));
+        } else {
+            return this.baseMapper.selectCount(new EntityWrapper<DiscussPost>().eq("user_id", userId).ne("status", 2));
         }
     }
 
     /**
      * 发布新帖
+     *
      * @param discussPost
      */
     @Override
@@ -66,6 +69,7 @@ public class DiscussPostService extends ServiceImpl<DiscussPostMapper, DiscussPo
 
     /**
      * 帖子详情
+     *
      * @param discussPostId
      * @return
      */
@@ -76,6 +80,7 @@ public class DiscussPostService extends ServiceImpl<DiscussPostMapper, DiscussPo
 
     /**
      * 修改CommentCount
+     *
      * @param
      */
     @Override
@@ -83,11 +88,15 @@ public class DiscussPostService extends ServiceImpl<DiscussPostMapper, DiscussPo
         this.baseMapper.updateCommentCount(commentCount, id);
     }
 
-    public int updateType(int id, int type){
+    public int updateType(int id, int type) {
         return this.baseMapper.updateType(id, type);
     }
 
-    public int updateStatus(int id, int status){
+    public int updateStatus(int id, int status) {
         return this.baseMapper.updateStatus(id, status);
+    }
+
+    public int updateScore(int id, double score) {
+        return this.baseMapper.updateScore(id, score);
     }
 }

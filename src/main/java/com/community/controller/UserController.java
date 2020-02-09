@@ -9,6 +9,8 @@ import com.community.util.CommonUtil;
 import com.community.util.RedisUtil;
 import com.community.util.UserThreadLocal;
 import com.community.vo.User;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -52,6 +55,18 @@ public class UserController {
     @Value("${server.servlet.context-path}")
     private String contextPath;
 
+    @Value("${qiniu.key.access}")
+    private String accessKey;
+
+    @Value("${qiniu.key.secret}")
+    private String secretKey;
+
+    @Value("${qiniu.bucket.header.name}")
+    private String headerBucketName;
+
+    @Value("${quniu.bucket.header.url}")
+    private String headerBucketUrl;
+
     @Autowired
     private UserService userService;
 
@@ -62,21 +77,54 @@ public class UserController {
     FollowService followService;
 
 
+    /**
+     * 进入个人设置页面， 同时生成七牛云的上传凭证
+     * @return
+     */
     @CheckLogin
     @RequestMapping(path = "/setting", method = RequestMethod.GET)
-    public String getSettingPage() {
+    public String getSettingPage(Model model) {
+        //上传文件名称
+        String fileName = CommonUtil.generateUUID();
+        //设置响应信息
+        StringMap map = new StringMap();
+        map.put("returnBody", CommonUtil.getJSONString(0));
+        Auth auth = Auth.create(accessKey, secretKey);
+        String uploadToken = auth.uploadToken(headerBucketName, fileName, 3600, map);
+        model.addAttribute("uploadToken", uploadToken);
+        model.addAttribute("fileName", fileName);
         return "/site/setting";
     }
 
     /**
-     * 上传头像
+     * 更新头像路径
+     * @param fileName
+     * @return
+     */
+    @RequestMapping(path = "/header/url", method = RequestMethod.POST)
+    @ResponseBody
+    public String updateHeaderUrl(String fileName) {
+        if (StringUtils.isBlank(fileName)) {
+            return CommonUtil.getJSONString(1, "文件名不能为空!");
+        }
+
+        String url = headerBucketUrl + "/" + fileName;
+        User user = UserThreadLocal.getUser();
+        user.setHeaderUrl(url);
+        userService.updateUserHeaderUrl(user);
+
+        return CommonUtil.getJSONString(0);
+    }
+
+    /**
+     * 上传头像（上传至本地时，现改为上传至七牛云，已废弃）
      *
      * @param model
      * @param multipartFile
      * @return
      */
     @CheckLogin
-    @RequestMapping(value = "/upload", method = RequestMethod.POST)
+    //@RequestMapping(value = "/upload", method = RequestMethod.POST)
     public String uploadFile(Model model, MultipartFile multipartFile) {
         if (multipartFile == null) {
             model.addAttribute("error", "您还没有选择图片!");
@@ -104,12 +152,12 @@ public class UserController {
     }
 
     /**
-     * 导航栏的头像显示
+     * 导航栏的头像显示 （上传至本地时，现改为上传至七牛云，已废弃）
      *
      * @param fileName
      * @param response
      */
-    @RequestMapping(path = "/header/{fileName}", method = RequestMethod.GET)
+    //@RequestMapping(path = "/header/{fileName}", method = RequestMethod.GET)
     public void getHeader(@PathVariable("fileName") String fileName, HttpServletResponse response) {
         // 服务器的头像存放路径
         fileName = uploadPath + "/" + fileName;

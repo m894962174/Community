@@ -58,7 +58,8 @@ public class SerurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(
                         "/discuss/top",
                         "/discuss/wonderful",
-                        "/data/**"
+                        "/data/**",
+                        "/actuator/**"
                 ).hasAnyAuthority(
                         CommonStatus.AUTHORITY_MODERATOR
                 )
